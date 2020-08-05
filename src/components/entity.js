@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import Grid from '@material-ui/core/Grid'
 import Paper from '@material-ui/core/Paper'
@@ -27,6 +27,7 @@ import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
+import axios from 'axios'
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -45,7 +46,7 @@ const useStyles = makeStyles((theme) => ({
     },
     paper: {
         padding: "15px",
-        height:"84vh"
+        height: "84vh"
     },
     paperListItem: {
         marginTop: theme.spacing(1),
@@ -53,7 +54,7 @@ const useStyles = makeStyles((theme) => ({
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        border:"1px solid",
+        border: "1px solid",
         width: "100%"
     },
     paperListItem1: {
@@ -62,7 +63,7 @@ const useStyles = makeStyles((theme) => ({
     },
     container: {
         height: "72vh",
-        overflow:"auto",
+        overflow: "auto",
         marginTop: "15px"
     },
     configurationPaper: {
@@ -72,30 +73,89 @@ const useStyles = makeStyles((theme) => ({
         display: "flex !important",
         justifyContent: "space-around !important"
     },
-    label:{
-        width:"70px"
+    label: {
+        width: "70px"
     },
     typography: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         width: "100%"
-    },    
+    },
 
 }))
     ;
 
 export default function Entity() {
     const classes = useStyles();
-    const [open, setOpen] = React.useState(false);
+    const [dialogState, setDialogState] = React.useState({
+        "label": "",
+        "open": false
+    });
+    const [entities, setEntities] = React.useState([])
+    const [entity, setEntity] = React.useState({
+        "entityName": "",
+        "encryptName": ""
+    })
 
-    const handleClickOpen = () => {
-        setOpen(true);
+    useEffect(() => {
+        fetchData()
+    }, [])
+
+    const fetchData = () => {
+        axios.get('http://localhost:5000/entities')
+        .then(res => setEntities(res.data))
+        // .then(res => console.log(res.data))
+        .catch(err => console.log(err))
+    }
+
+    const handleEntityChange = (e) =>
+        setEntity({
+            ...entity,
+            [e.target.name]: e.target.value,
+        });
+    const handleClickOpen = (label) => {
+        setDialogState({
+            "label": label,
+            "open": true
+        });
     };
 
     const handleClose = () => {
-        setOpen(false);
+        setDialogState({
+            "open": false
+        });
+        setEntity({
+            "entityName": "",
+            "encryptName": ""
+        });
     };
+    const handleSubmit = () => {
+        if (dialogState.label == "Update") {
+            axios.put('http://localhost:5000/entity', entity)
+            .then(res => {
+                fetchData()
+            })
+        }
+        else {
+            axios.post('http://localhost:5000/entity', entity)
+                .then(res => {
+                    fetchData()
+                })
+        }
+        handleClose()
+
+    };
+    const handleEdit = (entity) => {
+        setEntity(entity)
+        handleClickOpen("Update")
+    }
+    const handleDelete = (entity) => {
+        axios.delete('http://localhost:5000/entity',{data:{id:entity._id['$oid']}})
+                .then(res => {
+                    fetchData()
+                })
+    }
     return (
 
 
@@ -103,12 +163,12 @@ export default function Entity() {
             <Paper elevation={3} className={classes.paper}>
                 <Typography variant="h4" component="h2" className={classes.typography} >
                     Entities
-                    <IconButton aria-label="add" className={classes.margin} size="small" onClick={handleClickOpen}>
+                    <IconButton aria-label="add" className={classes.margin} size="small" onClick={() => handleClickOpen("Create")}>
                         <AddCircleOutlineIcon fontSize="10" />
                     </IconButton>
                 </Typography>
-                <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
-                    <DialogTitle id="form-dialog-title">Create Entity</DialogTitle>
+                <Dialog open={dialogState.open} onClose={handleClose} aria-labelledby="form-dialog-title">
+                    <DialogTitle id="form-dialog-title">{dialogState.label} Entity</DialogTitle>
                     <Divider />
                     <DialogContent>
 
@@ -117,14 +177,20 @@ export default function Entity() {
                             autoFocus
                             margin="dense"
                             id="entityName"
+                            name="entityName"
                             label="Entity Name"
+                            value={entity.entityName}
+                            onChange={handleEntityChange}
                             fullWidth
                         />
                         <TextField
                             variant="outlined"
                             margin="dense"
                             id="encryptName"
+                            name="encryptName"
                             label="Default Encypt Name"
+                            value={entity.encryptName}
+                            onChange={handleEntityChange}
                             fullWidth
                         />
                     </DialogContent>
@@ -132,28 +198,29 @@ export default function Entity() {
                         <Button onClick={handleClose} color="primary">
                             Cancel
                             </Button>
-                        <Button onClick={handleClose} color="primary">
+                        <Button onClick={handleSubmit} color="primary">
                             Create!
                             </Button>
                     </DialogActions>
                 </Dialog>
                 <Divider />
                 <List dense="dense" className={classes.container}>
-                    {["First Name", "Last Name", "SSN", "SIN","D","D", "BirthDate", "Credit Card", "PIN", "Aadhar Number"].map((entity) => {
+                    {entities.map((entity) => {
                         return (
 
-                            <ListItem>
-                                <Paper elevation={2} className={classes.paperListItem} >
+                            <ListItem key={entity._id}>
+                                <Paper elevation={2} className={classes.paperListItem}  >
                                     {/* <div className={classes.typography}> */}
-                                    <span>{entity}</span>
-                                    <div>
-                                        <IconButton aria-label="add" size="small">
+                                    <span>{entity.entityName}</span>
+                                    <div >
+                                        <IconButton aria-label="add" size="small" onClick={() => handleEdit(entity)}>
                                             <EditIcon fontSize="10" />
                                         </IconButton>
 
-                                        <IconButton aria-label="add" size="small">
+                                        {/* <IconButton aria-label="add" size="small" onClick={() => handleDelete(entity)}>
                                             <DeleteIcon fontSize="10" />
-                                        </IconButton>    </div>
+                                        </IconButton> */}
+                                            </div>
                                     {/* </div> */}
 
                                 </Paper></ListItem>

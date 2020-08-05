@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import Grid from '@material-ui/core/Grid'
 import Paper from '@material-ui/core/Paper'
@@ -58,11 +58,15 @@ const useStyles = makeStyles((theme) => ({
         marginTop: "15px"
     },
     configurationPaper: {
-        border:"1px solid",
+        border: "1px solid",
         borderRadius: "25px"
     },
     cardActions: {
         justifyContent: "space-around"
+    },
+    activeClass:{
+        backgroundColor:"green",
+        color:"white !important"
     }
 
 }))
@@ -70,41 +74,54 @@ const useStyles = makeStyles((theme) => ({
 
 export default function ProfileItem(props) {
     const classes = useStyles();
-    const [active, setActive] = React.useState(false);
+    const [profile, setProfile] = React.useState({
+        "profileName": "",
+        "entities": [],
+        "isActive": false
+    });
 
     const handleClick = () => {
-        active ? setActive(false) : setActive(true);
-    };
+        props.selectedProfile(profile)
+    }
+
+    const handleDelete = () => {
+        console.log("D")
+        props.delete(profile)
+    }
+    useEffect(() => {
+        setProfile(props.profile)
+    }, [])
 
     return (
-
-
         <Grid item xs={4}>
             <Paper elevation={3} className={classes.configurationPaper}>
                 <CardContent>
                     <Grid container direction="row" justify="center" alignItems="center">
                         <Grid item xs={9}>
                             <Typography variant="h5" component="h2" noWrap="true">
-                                {props.entity}
+                                {profile.profileName}
                             </Typography>
                         </Grid>
                         <Grid item xs={3} style={{ "text-align": "center" }}>
                             <Typography variant="h4" component="h4">
-                                2
-                                                    </Typography>
+                                {profile.entities?.length ? profile.entities.length : 0}
+                            </Typography>
                             <Typography variant="h7" component="h7">
                                 entities
-                                                    </Typography>
+                            </Typography>
                         </Grid>
                     </Grid>
                 </CardContent>
                 <CardActions className={classes.cardActions}>
-                    <IconButton aria-label="add" size="small">
+                    <IconButton aria-label="add" size="small" onClick={() => handleClick("Edit")}>
                         <EditIcon fontSize="10" />
                     </IconButton>
+                    {/* <svg height="50" width="50" class="blinking">
+                        <circle cx="25" cy="25" r="10" fill="green" />
 
-                    <Button onClick={()=>handleClick()} variant={active?"contained":"outlined"} color={active?"primary":""}>{active?"Active":"Inactive"}</Button>
-                    <IconButton aria-label="add" size="small">
+                    </svg> */}
+                    <Button disabled variant= "outlined" className={profile.isActive?classes.activeClass:""}>{profile.isActive ? "Activated" : "Inactivated"}</Button>
+                    <IconButton aria-label="add" size="small" onClick={() => handleDelete()}>
                         <DeleteIcon fontSize="10" />
                     </IconButton>
                 </CardActions>

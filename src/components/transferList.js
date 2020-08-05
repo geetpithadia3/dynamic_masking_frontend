@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 import List from '@material-ui/core/List';
@@ -22,12 +22,12 @@ const useStyles = makeStyles((theme) => ({
   },
   list: {
     height: "50vh",
-    width:"45vh",
+    width: "45vh",
     backgroundColor: theme.palette.background.paper,
     overflow: 'auto',
   },
-  listItem:{
-    
+  listItem: {
+
   },
   button: {
     margin: theme.spacing(0.5, 0),
@@ -37,11 +37,11 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%"
-},
+  },
 }));
 
 function not(a, b) {
-  return a.filter((value) => b.indexOf(value) === -1);
+  return a.filter((value) => b.indexOf(value) == -1);
 }
 
 function intersection(a, b) {
@@ -52,25 +52,28 @@ function union(a, b) {
   return [...a, ...not(b, a)];
 }
 
-export default function TransferList() {
+export default function TransferList(props) {
   const classes = useStyles();
   const [checked, setChecked] = React.useState([]);
-  const [left, setLeft] = React.useState([0, 1, 2, 3]);
-  const [right, setRight] = React.useState([4, 5, 6, 7]);
+  const [left, setLeft] = React.useState([]);
+  const [right, setRight] = React.useState([]);
 
   const leftChecked = intersection(checked, left);
   const rightChecked = intersection(checked, right);
 
+  useEffect(() => {
+    setLeft(props.left)
+    setRight(props.right)
+  }, [props.left,props.right])
+
   const handleToggle = (value) => () => {
     const currentIndex = checked.indexOf(value);
     const newChecked = [...checked];
-
     if (currentIndex === -1) {
       newChecked.push(value);
     } else {
       newChecked.splice(currentIndex, 1);
     }
-
     setChecked(newChecked);
   };
 
@@ -88,13 +91,21 @@ export default function TransferList() {
     setRight(right.concat(leftChecked));
     setLeft(not(left, leftChecked));
     setChecked(not(checked, leftChecked));
+    props.selectedEntities(right.concat(leftChecked))
   };
 
   const handleCheckedLeft = () => {
     setLeft(left.concat(rightChecked));
     setRight(not(right, rightChecked));
     setChecked(not(checked, rightChecked));
+    props.selectedEntities(not(right, rightChecked))
   };
+  const handleChange = (e, value) => {
+    console.log("UPDATED")
+    value.encryptName = e.target.value
+    const updated=left
+    setLeft(updated)
+  }
 
   const leftList = (title, items) => (
     <Card>
@@ -115,33 +126,35 @@ export default function TransferList() {
       />
       <Divider />
       <List className={classes.list} dense component="div" role="list">
-        {items.map((value) => {
-          const labelId = `transfer-list-all-item-${value}-label`;
+        {items.map((value,i) => {
+          const labelId = `transfer-list-all-item-${i}-label1`;
 
           return (
-            
-              <ListItem key={value} role="listitem" button onClick={handleToggle(value)} divider="true">
-                <ListItemIcon>
-                  <Checkbox
-                    checked={checked.indexOf(value) !== -1}
-                    tabIndex={-1}
-                    disableRipple
-                    color="primary"
-                    inputProps={{ 'aria-labelledby': labelId }}
-                  />
-                </ListItemIcon>
-                <ListItemText id={labelId} >
-                  <div style={{textAlign:"center"}}>{`List item ${value + 1}`}</div>
+
+            <ListItem  key={value.encryptName} role="listitem" button onClick={handleToggle(value)} divider="true">
+              <ListItemIcon>
+                <Checkbox
+                  checked={checked.indexOf(value) !== -1}
+                  tabIndex={-1}
+                  disableRipple
+                  color="primary"
+                  inputProps={{ 'aria-labelledby': labelId }}
+                />
+              </ListItemIcon>
+              <ListItemText id={labelId} >
+                <div>{value.entityName}</div>
                   <TextField
                     margin="dense"
-                    id="entityName"
-                    label="Entity Name"
+                    id={value.encryptName}
+                    label="Encrypt Name"
+                    defaultValue={value.encryptName}
+                    onChange={(event) => handleChange(event, value)}
                   // fullWidth
                   />
-                </ListItemText>
+              </ListItemText>
 
-              </ListItem>
-              
+            </ListItem>
+
           );
         })}
         <ListItem />
@@ -167,32 +180,34 @@ export default function TransferList() {
       />
       <Divider />
       <List className={classes.list} dense component="div" role="list">
-        {items.map((value) => {
-          const labelId = `transfer-list-all-item-${value}-label`;
+        {items.map((value,i) => {
+          const labelId = `transfer-list-all-item-${i}-label2`;
 
           return (
-              <ListItem className={classes.listItem} key={value} role="listitem" button onClick={handleToggle(value)} divider="true">
-                <ListItemIcon>
-                  <Checkbox
-                    checked={checked.indexOf(value) !== -1}
-                    tabIndex={-1}
-                    disableRipple
-                    color="primary"
-                    inputProps={{ 'aria-labelledby': labelId }}
-                  />
-                </ListItemIcon>
-                <ListItemText id={labelId} >
-                  <div>{`List item ${value + 1}`}</div>
-                  <TextField disabled
-                    margin="dense"
-                    id="entityName"
-                    label="Entity Name"
-                  // fullWidth
-                  />
-                </ListItemText>
+            <ListItem key={labelId} className={classes.listItem} role="listitem" button onClick={handleToggle(value)} divider="True">
+              <ListItemIcon>
+                <Checkbox
+                  checked={checked.indexOf(value) !== -1}
+                  tabIndex={-1}
+                  disableRipple
+                  color="primary"
+                  inputProps={{ 'aria-labelledby': labelId }}
+                />
+              </ListItemIcon>
+              <ListItemText id={labelId} >
+                <div>{value.entityName}</div>
+                <TextField disabled
+                  margin="dense"
+                  id={value.encryptName}
+                  label="Encrypt Name"
+                  
+                  value={value.encryptName}
+                // fullWidth
+                />
+              </ListItemText>
 
-              </ListItem>
-              
+            </ListItem>
+
           );
         })}
         <ListItem />
